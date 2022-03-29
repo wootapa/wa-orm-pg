@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<PackageId>wootapa.Orm.Pg</PackageId>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<Authors>wootapa</Authors>
+		<NoWarn>$(NoWarn);1591</NoWarn>
+		<Company/>
+		<Description>.NET object mapper for PostgreSQL. Originally developed by Dennis Ahlquist.</Description>
+		<Copyright>Andreas Petersson</Copyright>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/wootapa/wa-orm-pg</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/wootapa/wa-orm-pg</RepositoryUrl>
+		<RepositoryType>Git</RepositoryType>
+		<PackageTags>mapper,orm,postgresql,sql</PackageTags>
+		<PackageReleaseNotes>See repository</PackageReleaseNotes>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Version>0.0.1</Version>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<DocumentationFile>bin\Release\netcoreapp2.0\wa.Orm.Pg.xml</DocumentationFile>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0"/>
+		<PackageReference Include="System.Linq.Async" Version="6.0.1"/>
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0"/>
+	</ItemGroup>
+</Project>
