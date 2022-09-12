@@ -5,145 +5,144 @@ using System.Threading.Tasks;
 using wa.Orm.Pg.Test.Models;
 using Xunit;
 
-namespace wa.Orm.Pg.Test
+namespace wa.Orm.Pg.Test;
+
+[Collection("DBTest")]
+public class CarTest : IDisposable
 {
-    [Collection("DBTest")]
-    public class CarTest : IDisposable
+    private readonly DbConnection db;
+
+    public CarTest()
     {
-        private DbConnection _db;
+        db = DatabaseFactory.Connect();
+    }
 
-        public CarTest()
+    [Fact]
+    public void InsertAndUpsert()
+    {
+        var data = new Car
         {
-            _db = DatabaseFactory.Connect();
-        }
+            Id = "AAA001",
+            Make = "Audi S4"
+        };
 
-        [Fact]
-        public void InsertAndUpsert()
+        db.Insert("cars", data);
+
+        data.Make = "BMW M5";
+        var isInsert = db.Upsert("cars", data, "id");
+
+        var car = db.Query<Car>("SELECT * FROM cars WHERE id=@Id", data).FirstOrDefault();
+
+        Assert.False(isInsert);
+        Assert.Equal(data.Make, car!.Make);
+    }
+
+    [Fact]
+    public async Task InsertAndUpsertAsync()
+    {
+        var data = new Car
         {
-            Car _data = new Car
-            {
-                Id = "AAA001",
-                Make = "Audi S4"
-            };
+            Id = "AAAA001",
+            Make = "Audi S4"
+        };
 
-            _db.Insert("cars", _data);
+        await db.InsertAsync("cars", data).ConfigureAwait(false);
 
-            _data.Make = "BMW M5";
-            bool isInsert = _db.Upsert("cars", _data, "id");
+        data.Make = "BMW M5";
+        var isInsert = await db.UpsertAsync("cars", data, "id").ConfigureAwait(false);
 
-            Car car = _db.Query<Car>("SELECT * FROM cars WHERE id=@Id", _data).FirstOrDefault();
+        var car = (await db.QueryAsync<Car>("SELECT * FROM cars WHERE id=@Id", data).FirstOrDefaultAsync().ConfigureAwait(false));
 
-            Assert.False(isInsert);
-            Assert.Equal(_data.Make, car.Make);
-        }
+        Assert.False(isInsert);
+        Assert.Equal(data.Make, car!.Make);
+    }
 
-        [Fact]
-        public async Task InsertAndUpsertAsync()
+    [Fact]
+    public void UpsertAndUpsert()
+    {
+        var data = new Car
         {
-            Car _data = new Car
-            {
-                Id = "AAAA001",
-                Make = "Audi S4"
-            };
+            Id = "AAA002",
+            Make = "VW Passat"
+        };
 
-            await _db.InsertAsync("cars", _data).ConfigureAwait(false);
+        var isInsert = db.Upsert("cars", data, "id");
 
-            _data.Make = "BMW M5";
-            bool isInsert = await _db.UpsertAsync("cars", _data, "id").ConfigureAwait(false);
+        data.Make = "Volvo V70";
+        var isUpdate = !db.Upsert("cars", data, "id");
 
-            Car car = (await _db.QueryAsync<Car>("SELECT * FROM cars WHERE id=@Id", _data).FirstOrDefaultAsync().ConfigureAwait(false));
+        var car = db.Query<Car>("SELECT * FROM cars WHERE id=@Id", data).FirstOrDefault();
 
-            Assert.False(isInsert);
-            Assert.Equal(_data.Make, car.Make);
-        }
+        Assert.True(isInsert);
+        Assert.True(isUpdate);
+        Assert.Equal(data.Make, car!.Make);
+    }
 
-        [Fact]
-        public void UpsertAndUpsert()
+    [Fact]
+    public async Task UpsertAndUpsertAsync()
+    {
+        var data = new Car
         {
-            Car _data = new Car
-            {
-                Id = "AAA002",
-                Make = "VW Passat"
-            };
+            Id = "AAAA002",
+            Make = "VW Passat"
+        };
 
-            bool isInsert = _db.Upsert("cars", _data, "id");
+        var isInsert = await db.UpsertAsync("cars", data, "id").ConfigureAwait(false);
 
-            _data.Make = "Volvo V70";
-            bool isUpdate = !_db.Upsert("cars", _data, "id");
+        data.Make = "Volvo V70";
+        var isUpdate = !(await db.UpsertAsync("cars", data, "id").ConfigureAwait(false));
 
-            Car car = _db.Query<Car>("SELECT * FROM cars WHERE id=@Id", _data).FirstOrDefault();
+        var car = db.Query<Car>("SELECT * FROM cars WHERE id=@Id", data).FirstOrDefault();
 
-            Assert.True(isInsert);
-            Assert.True(isUpdate);
-            Assert.Equal(_data.Make, car.Make);
-        }
+        Assert.True(isInsert);
+        Assert.True(isUpdate);
+        Assert.Equal(data.Make, car!.Make);
+    }
 
-        [Fact]
-        public async Task UpsertAndUpsertAsync()
+    [Fact]
+    public void InsertIfMissing()
+    {
+        var data = new Car
         {
-            Car _data = new Car
-            {
-                Id = "AAAA002",
-                Make = "VW Passat"
-            };
+            Id = "AAA003",
+            Make = "Ferrari F40"
+        };
 
-            bool isInsert = await _db.UpsertAsync("cars", _data, "id").ConfigureAwait(false);
+        var affected = db.InsertIfMissing("cars", data, "id");
 
-            _data.Make = "Volvo V70";
-            bool isUpdate = !(await _db.UpsertAsync("cars", _data, "id").ConfigureAwait(false));
+        data.Make = "Lamborghini Aventador";
+        var affected2 = db.InsertIfMissing("cars", data, "id");
 
-            Car car = _db.Query<Car>("SELECT * FROM cars WHERE id=@Id", _data).FirstOrDefault();
+        var car = db.Query<Car>("SELECT * FROM cars WHERE id=@Id", data).FirstOrDefault();
 
-            Assert.True(isInsert);
-            Assert.True(isUpdate);
-            Assert.Equal(_data.Make, car.Make);
-        }
+        Assert.Equal(1, affected);
+        Assert.Equal(0, affected2);
+        Assert.Equal("Ferrari F40", car!.Make);
+    }
 
-        [Fact]
-        public void InsertIfMissing()
+    [Fact]
+    public async Task InsertIfMissingAsync()
+    {
+        var data = new Car
         {
-            Car _data = new Car
-            {
-                Id = "AAA003",
-                Make = "Ferrari F40"
-            };
+            Id = "AAAA003",
+            Make = "Ferrari F40"
+        };
 
-            int affected = _db.InsertIfMissing("cars", _data, "id");
+        var affected = await db.InsertIfMissingAsync("cars", data, "id").ConfigureAwait(false);
 
-            _data.Make = "Lamborghini Aventador";
-            int affected2 = _db.InsertIfMissing("cars", _data, "id");
+        data.Make = "Lamborghini Aventador";
+        var affected2 = await db.InsertIfMissingAsync("cars", data, "id").ConfigureAwait(false);
 
-            Car car = _db.Query<Car>("SELECT * FROM cars WHERE id=@Id", _data).FirstOrDefault();
+        var car = (await db.QueryAsync<Car>("SELECT * FROM cars WHERE id=@Id", data).FirstOrDefaultAsync().ConfigureAwait(false));
 
-            Assert.Equal(1, affected);
-            Assert.Equal(0, affected2);
-            Assert.Equal("Ferrari F40", car.Make);
-        }
+        Assert.Equal(1, affected);
+        Assert.Equal(0, affected2);
+        Assert.Equal("Ferrari F40", car!.Make);
+    }
 
-        [Fact]
-        public async Task InsertIfMissingAsync()
-        {
-            Car _data = new Car
-            {
-                Id = "AAAA003",
-                Make = "Ferrari F40"
-            };
-
-            int affected = await _db.InsertIfMissingAsync("cars", _data, "id").ConfigureAwait(false);
-
-            _data.Make = "Lamborghini Aventador";
-            int affected2 = await _db.InsertIfMissingAsync("cars", _data, "id").ConfigureAwait(false);
-
-            Car car = (await _db.QueryAsync<Car>("SELECT * FROM cars WHERE id=@Id", _data).FirstOrDefaultAsync().ConfigureAwait(false));
-
-            Assert.Equal(1, affected);
-            Assert.Equal(0, affected2);
-            Assert.Equal("Ferrari F40", car.Make);
-        }
-
-        public void Dispose()
-        {
-            _db.Dispose();
-        }
+    public void Dispose()
+    {
+        db.Dispose();
     }
 }

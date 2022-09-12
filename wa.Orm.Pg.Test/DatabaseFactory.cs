@@ -3,49 +3,50 @@ using System.Threading.Tasks;
 using wa.Orm.Pg.Test.Models;
 using Npgsql;
 
-namespace wa.Orm.Pg.Test
+namespace wa.Orm.Pg.Test;
+
+public static class DatabaseFactory
 {
-    public class DatabaseFactory
+    public static NpgsqlConnection Connect(bool mapEnums = true)
     {
-        public static NpgsqlConnection Connect(bool mapEnums = true)
+        var conn = new NpgsqlConnection("Host=localhost;Port=5432;Database=pgormtest;User ID=postgres;Password=postgres;");
+        conn.Open();
+        if (mapEnums)
         {
-            var conn = new NpgsqlConnection("Host=localhost;Port=5432;Database=pgormtest;User ID=postgres;Password=postgres;");
-            conn.Open();
-            if (mapEnums)
-            {
-                conn.TypeMapper.MapEnum<Gender>("gender");
-            }
-            int timeZoneOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow).Hours;
-            conn.Execute($"SET TIME ZONE {timeZoneOffset}");
-
-            return conn;
-        }
-        public static async Task<NpgsqlConnection> ConnectAsync(bool mapEnums = true)
-        {
-            var conn = new NpgsqlConnection("Host=localhost;Port=5432;Database=pgormtest;User ID=postgres;Password=postgres;");
-            await conn.OpenAsync().ConfigureAwait(false);
-            if (mapEnums)
-            {
-                conn.TypeMapper.MapEnum<Gender>("gender");
-            }
-            int timeZoneOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow).Hours;
-            await conn.ExecuteAsync($"SET TIME ZONE {timeZoneOffset}").ConfigureAwait(false);
-
-            return conn;
+            conn.TypeMapper.MapEnum<Gender>("gender");
         }
 
-        public static void CreatePostgres()
+        int timeZoneOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow).Hours;
+        conn.Execute($"SET TIME ZONE {timeZoneOffset}");
+
+        return conn;
+    }
+
+    public static async Task<NpgsqlConnection> ConnectAsync(bool mapEnums = true)
+    {
+        var conn = new NpgsqlConnection("Host=localhost;Port=5432;Database=pgormtest;User ID=postgres;Password=postgres;");
+        await conn.OpenAsync().ConfigureAwait(false);
+        if (mapEnums)
         {
-            using (var connection = Connect(false))
-            {
+            conn.TypeMapper.MapEnum<Gender>("gender");
+        }
 
-                if (!connection.Scalar<bool?>("SELECT true FROM pg_type WHERE typname = 'gender'").GetValueOrDefault())
-                {
-                    connection.Execute(@"CREATE TYPE gender AS ENUM ('unknown', 'male', 'female');");
-                    connection.ReloadTypes();
-                }
+        int timeZoneOffset = TimeZoneInfo.Local.GetUtcOffset(DateTime.UtcNow).Hours;
+        await conn.ExecuteAsync($"SET TIME ZONE {timeZoneOffset}").ConfigureAwait(false);
 
-                connection.Execute(@"
+        return conn;
+    }
+
+    public static void CreatePostgres()
+    {
+        using var connection = Connect(false);
+        if (!connection.Scalar<bool?>("SELECT true FROM pg_type WHERE typname = 'gender'").GetValueOrDefault())
+        {
+            connection.Execute(@"CREATE TYPE gender AS ENUM ('unknown', 'male', 'female');");
+            connection.ReloadTypes();
+        }
+
+        connection.Execute(@"
                     CREATE TABLE IF NOT EXISTS persons
                     (
                       id serial,
@@ -57,10 +58,10 @@ namespace wa.Orm.Pg.Test
                       CONSTRAINT persons_pk PRIMARY KEY (id)
                     )");
 
-                connection.Execute(
-                    "TRUNCATE TABLE persons CASCADE");
+        connection.Execute(
+            "TRUNCATE TABLE persons CASCADE");
 
-                connection.Execute(@"
+        connection.Execute(@"
                     CREATE TABLE IF NOT EXISTS document
                     (
                       id uuid NOT NULL,
@@ -70,10 +71,10 @@ namespace wa.Orm.Pg.Test
                       CONSTRAINT document_pk PRIMARY KEY (id)
                     )");
 
-                connection.Execute(
-                    "TRUNCATE TABLE document CASCADE");
+        connection.Execute(
+            "TRUNCATE TABLE document CASCADE");
 
-                connection.Execute(@"
+        connection.Execute(@"
                     CREATE TABLE IF NOT EXISTS cars
                     (
                       id text,
@@ -82,9 +83,7 @@ namespace wa.Orm.Pg.Test
                       CONSTRAINT cars_pk PRIMARY KEY (id)
                     )");
 
-                connection.Execute(
-                    "TRUNCATE TABLE cars CASCADE");
-            }
-        }
+        connection.Execute(
+            "TRUNCATE TABLE cars CASCADE");
     }
 }

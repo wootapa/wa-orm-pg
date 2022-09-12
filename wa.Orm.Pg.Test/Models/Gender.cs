@@ -1,9 +1,8 @@
-﻿namespace wa.Orm.Pg.Test.Models
+﻿namespace wa.Orm.Pg.Test.Models;
+
+public enum Gender
 {
-    public enum Gender
-    {
-        Unknown,
-        Male,
-        Female
-    }
+    Unknown,
+    Male,
+    Female
 }

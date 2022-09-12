@@ -1,5 +1,7 @@
-.vs
+**/.vs
 **/.vscode
+**/.idea
+**/*DotSettings.user
 **/bin
 **/obj
-.DS_Store
+**/.DS_Store

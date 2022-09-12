@@ -1,7 +1,5 @@
 using wa.Orm.Pg.Reflection;
 using wa.Orm.Pg.Test.Models;
-using System;
-using System.Linq;
 using Xunit;
 
 namespace wa.Orm.Pg.Test.Reflection

@@ -2,11 +2,19 @@ using wa.Orm.Pg.Reflection;
 using wa.Orm.Pg.Test.Models;
 using System.Linq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace wa.Orm.Pg.Test.Reflection
 {
     public class TypeDescriberTest
     {
+        private readonly ITestOutputHelper testOutputHelper;
+
+        public TypeDescriberTest(ITestOutputHelper testOutputHelper)
+        {
+            this.testOutputHelper = testOutputHelper;
+        }
+
         [Fact]
         public void HasType()
         {
@@ -40,9 +48,9 @@ namespace wa.Orm.Pg.Test.Reflection
         {
             TypeDescriber person = TypeHandler.Get<Person>();
             TypeDescriber document = TypeHandler.Get<Document>();
-
-            Assert.Equal(5, person.WriteableProperties.Count());
-            Assert.Equal(4, document.WriteableProperties.Count());
+            
+            Assert.Equal(4, person.Writable.Count());
+            Assert.Equal(4, document.Writable.Count());
         }
 
         [Fact]
@@ -51,8 +59,8 @@ namespace wa.Orm.Pg.Test.Reflection
             TypeDescriber person = TypeHandler.Get<Person>();
             TypeDescriber document = TypeHandler.Get<Document>();
 
-            Assert.Equal(4, person.WriteableColumns.Count());
-            Assert.Equal(4, document.WriteableColumns.Count());
+            Assert.Equal(4, person.Writable.Count());
+            Assert.Equal(4, document.Writable.Count());
         }
 
         [Fact]
