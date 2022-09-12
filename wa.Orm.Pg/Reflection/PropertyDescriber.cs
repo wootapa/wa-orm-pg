@@ -7,7 +7,7 @@ namespace wa.Orm.Pg.Reflection;
 public class PropertyDescriber
 {
     public PropertyInfo Property { get; set; }
-    public string DbName { get; set; }
+    public string Column { get; set; }
     public bool IsKey { get; private set; }
     public bool IsWriteable { get; private set; }
     public bool IsReadable { get; private set; }
@@ -18,7 +18,7 @@ public class PropertyDescriber
     public PropertyDescriber(PropertyInfo info)
     {
         Property = info;
-        DbName = Util.ToUnderscore(info.GetCustomAttribute<ColumnAttribute>()?.Name ?? info.Name);
+        Column = info.GetCustomAttribute<ColumnAttribute>()?.Name ?? Util.ToUnderscore(info.Name);
         IsKey = info.GetCustomAttribute<KeyAttribute>() != null;
         IsWriteable = Property.CanWrite && info.GetCustomAttribute<GeneratedAttribute>() == null;
         IsReadable = Property.CanRead;

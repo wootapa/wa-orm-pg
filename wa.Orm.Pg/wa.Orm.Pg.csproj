@@ -17,7 +17,7 @@
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>0.0.3</Version>
+		<Version>0.0.4</Version>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<DocumentationFile>bin\Release\netcoreapp2.0\wa.Orm.Pg.xml</DocumentationFile>

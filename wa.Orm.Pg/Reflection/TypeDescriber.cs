@@ -16,7 +16,7 @@ public class TypeDescriber : List<PropertyDescriber>
     public TypeDescriber(Type type)
     {
         Type = type;
-        Table = Type.GetTypeInfo().GetCustomAttribute<TableAttribute>()?.Name ?? Type.Name.ToLower();
+        Table = Type.GetTypeInfo().GetCustomAttribute<TableAttribute>()?.Name ?? Util.ToUnderscore(Type.Name);
 
         var props = Type.GetProperties();
 
@@ -29,7 +29,7 @@ public class TypeDescriber : List<PropertyDescriber>
         {
             var prop = new PropertyDescriber(property);
             this.properties[prop.Property.Name] = prop.Property;
-            this.properties[prop.DbName] = prop.Property;
+            this.properties[prop.Column] = prop.Property;
         }
     }
 

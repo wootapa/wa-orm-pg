@@ -36,7 +36,7 @@ public static class OrmExtension
             throw new ArgumentException($"KeyAttribute-count ({keys.Length}) and argument-count ({ids.Length}) must match");
         }
 
-        var where = string.Join(" AND ", keys.Select(x => x.DbName + "=@" + x.Property.Name));
+        var where = string.Join(" AND ", keys.Select(x => x.Column + "=@" + x.Property.Name));
         var sql = $"SELECT * FROM {td.Table} WHERE {where}";
 
         var cmd = @this.Prepare(sql);
@@ -86,10 +86,10 @@ public static class OrmExtension
             throw new ArgumentException($"KeyAttribute-count ({keys.Length}) and argument-count ({ids.Length}) must match");
         }
 
-        var where = string.Join(",", keys.Select(x => x.DbName + "=@" + x.Property.Name));
+        var where = string.Join(",", keys.Select(x => $"{x.Column}=@{x.Property.Name}"));
         var sql = $"SELECT * FROM {td.Table} WHERE {where}";
+        var cmd = await @this.PrepareAsync(sql, cancellationToken: cancellationToken).ConfigureAwait(false);
 
-        DbCommand cmd = await @this.PrepareAsync(sql, cancellationToken: cancellationToken).ConfigureAwait(false);
         for (var i = 0; i < ids.Length; i++)
         {
             cmd.ApplyParameter(keys[i].Property.Name, ids[i]);
@@ -114,9 +114,9 @@ public static class OrmExtension
 
         if (generated.Any())
         {
-            var columns = td.Writable.Select(x => x.DbName).Aggregate((a, b) => a + "," + b);
-            var values = td.Writable.Select(x => "@" + x.Property.Name).Aggregate((a, b) => a + "," + b);
-            var returns = string.Join(",", generated.Select(x => x.DbName));
+            var columns = string.Join(",", td.Writable.Select(x => x.Column));
+            var values = string.Join(",", td.Writable.Select(x => $"@{x.Property.Name}"));
+            var returns = string.Join(",", generated.Select(x => x.Column));
 
             var sql = $"INSERT INTO {td.Table} ({columns}) VALUES ({values}) RETURNING {returns}";
 
@@ -124,7 +124,7 @@ public static class OrmExtension
 
             foreach (var prop in generated)
             {
-                td.SetValue(prop.Property.Name, data, result?[prop.DbName]);
+                td.SetValue(prop.Property.Name, data, result?[prop.Column]);
             }
 
             return 1;
@@ -150,9 +150,9 @@ public static class OrmExtension
 
         if (generated.Any())
         {
-            var columns = td.Writable.Select(x => x.DbName).Aggregate((a, b) => a + "," + b);
-            var values = td.Writable.Select(x => "@" + x.Property.Name).Aggregate((a, b) => a + "," + b);
-            var returns = string.Join(",", generated.Select(x => x.DbName));
+            var columns = string.Join(",", td.Writable.Select(x => x.Column));
+            var values = string.Join(",", td.Writable.Select(x => $"@{x.Property.Name}"));
+            var returns = string.Join(",", generated.Select(x => x.Column));
 
             var sql = $"INSERT INTO {td.Table} ({columns}) VALUES ({values}) RETURNING {returns}";
 
@@ -160,7 +160,7 @@ public static class OrmExtension
 
             foreach (var prop in generated)
             {
-                td.SetValue(prop.Property.Name, data, result?[prop.DbName]);
+                td.SetValue(prop.Property.Name, data, result?[prop.Column]);
             }
 
             return 1;
@@ -244,7 +244,7 @@ public static class OrmExtension
 
         if (keys.Any())
         {
-            return @this.InsertManyIfMissing(td.Table, dataListArray, string.Join(",", keys.Select(x => x.DbName)), transaction);
+            return @this.InsertManyIfMissing(td.Table, dataListArray, string.Join(",", keys.Select(x => x.Column)), transaction);
         }
 
         throw new ArgumentException("Invalid object. Atleast one property must be marked with KeyAttribute on type " + dataListArray.First().GetType().Name);
@@ -266,7 +266,7 @@ public static class OrmExtension
 
         if (keys.Any())
         {
-            return @this.InsertManyIfMissingAsync(td.Table, dataListArray, string.Join(",", keys.Select(x => x.DbName)), transaction, cancellationToken);
+            return @this.InsertManyIfMissingAsync(td.Table, dataListArray, string.Join(",", keys.Select(x => x.Column)), transaction, cancellationToken);
         }
 
         throw new ArgumentException("Invalid object. Atleast one property must be marked with KeyAttribute on type " + dataListArray.First().GetType().Name);
@@ -316,7 +316,7 @@ public static class OrmExtension
 
         if (keys.Any())
         {
-            return @this.UpsertMany(td.Table, dataListArray, string.Join(",", keys.Select(x => x.DbName)), transaction);
+            return @this.UpsertMany(td.Table, dataListArray, string.Join(",", keys.Select(x => x.Column)), transaction);
         }
 
         throw new ArgumentException("Invalid object. Atleast one property must be marked with KeyAttribute on type " + dataListArray.First().GetType().Name);
@@ -338,7 +338,7 @@ public static class OrmExtension
 
         if (keys.Any())
         {
-            return @this.UpsertManyAsync(td.Table, dataListArray, string.Join(",", keys.Select(x => x.DbName)), transaction, cancellationToken);
+            return @this.UpsertManyAsync(td.Table, dataListArray, string.Join(",", keys.Select(x => x.Column)), transaction, cancellationToken);
         }
 
         throw new ArgumentException("Invalid object. Atleast one property must be marked with KeyAttribute on type " + dataListArray.First().GetType().Name);
@@ -360,7 +360,7 @@ public static class OrmExtension
 
         if (keys.Any())
         {
-            return @this.Update(td.Table, data, string.Join(",", keys.Select(x => x.DbName + "=@" + x.Property.Name)), null, transaction);
+            return @this.Update(td.Table, data, string.Join(",", keys.Select(x => x.Column + "=@" + x.Property.Name)), null, transaction);
         }
 
         throw new ArgumentException("Invalid object. Atleast one property must be marked with KeyAttribute on type " + data.GetType().Name);
@@ -383,7 +383,7 @@ public static class OrmExtension
 
         if (keys.Any())
         {
-            return @this.UpdateAsync(td.Table, data, string.Join(",", keys.Select(x => x.DbName + "=@" + x.Property.Name)), null, transaction, cancellationToken);
+            return @this.UpdateAsync(td.Table, data, string.Join(",", keys.Select(x => x.Column + "=@" + x.Property.Name)), null, transaction, cancellationToken);
         }
 
         throw new ArgumentException("Invalid object. Atleast one property must be marked with KeyAttribute on type " + data.GetType().Name);
@@ -405,7 +405,7 @@ public static class OrmExtension
 
         if (keys.Any())
         {
-            return @this.Delete(td.Table, string.Join(" AND ", keys.Select(x => x.DbName + "=@" + x.Property.Name)), data, transaction);
+            return @this.Delete(td.Table, string.Join(" AND ", keys.Select(x => x.Column + "=@" + x.Property.Name)), data, transaction);
         }
 
         throw new ArgumentException("Invalid object. Atleast one property must be marked with KeyAttribute on type " + data.GetType().Name);
@@ -428,7 +428,7 @@ public static class OrmExtension
 
         if (keys.Any())
         {
-            return @this.DeleteAsync(td.Table, string.Join(" AND ", keys.Select(x => x.DbName + "=@" + x.Property.Name)), data, transaction, cancellationToken);
+            return @this.DeleteAsync(td.Table, string.Join(" AND ", keys.Select(x => x.Column + "=@" + x.Property.Name)), data, transaction, cancellationToken);
         }
 
         throw new ArgumentException("Invalid object. Atleast one property must be marked with KeyAttribute on type " + data.GetType().Name);
