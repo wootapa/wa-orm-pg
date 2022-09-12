@@ -5,66 +5,74 @@ using System.Data.Common;
 using System.Linq;
 using wa.Orm.Pg.Reflection;
 
-namespace wa.Orm.Pg
+namespace wa.Orm.Pg;
+
+/// <summary>
+/// Internal extension for commands
+/// </summary>
+internal static class CommandExtension
 {
     /// <summary>
-    /// Internal extension for commands
+    /// Add parameter to a command
     /// </summary>
-    internal static class CommandExtension
+    /// <param name="this">Command to add parameter to</param>
+    /// <param name="key">Key of the parameter</param>
+    /// <param name="value">Value of the parameter</param>
+    /// <param name="stringEnum">Handle enum as a string parameter</param>
+    public static void ApplyParameter(this DbCommand @this, string key, object value, bool stringEnum = false)
     {
-        /// <summary>
-        /// Add parameter to a command
-        /// </summary>
-        /// <param name="cmd">Command to add parameter to</param>
-        /// <param name="key">Key of the parameter</param>
-        /// <param name="value">Value of the parameter</param>
-        public static void ApplyParameter(this DbCommand cmd, string key, object value)
+        IDbDataParameter parameter = @this.CreateParameter();
+        parameter.ParameterName = key;
+        parameter.Value = value is Enum && stringEnum ? value.ToString() : value;
+        @this.Parameters.Add(parameter);
+    }
+
+    /// <summary>
+    /// Add parameters to a command
+    /// </summary>
+    /// <param name="this">Command to add parameters to</param>
+    /// <param name="args">Object that holds the parameters</param>
+    public static void ApplyParameters(this DbCommand @this, object args = null)
+    {
+        if (args == null)
         {
-            IDbDataParameter parameter = cmd.CreateParameter();
-            parameter.ParameterName = key;
-            parameter.Value = value;
-            cmd.Parameters.Add(parameter);
+            return;
         }
 
-        /// <summary>
-        /// Add parameters to a command
-        /// </summary>
-        /// <param name="cmd">Command to add parameters to</param>
-        /// <param name="args">Object that holds the parameters</param>
-        public static void ApplyParameters(this DbCommand cmd, object args = null)
+        var td = TypeHandler.Get(args);
+
+        foreach (var property in td.Arguments)
         {
-            if (args == null) return;
+            var value = td.GetValue(property.Property.Name, args);
+            @this.ApplyParameter(property.Property.Name, value ?? DBNull.Value, property.IsStringEnum);
+        }
+    }
 
-            var td = TypeHandler.Get(args);
+    /// <summary>
+    /// Add parameters to an indexed bulk command
+    /// </summary>
+    /// <param name="this">Command to add parameters to</param>
+    /// <param name="argsList">List of objects that holds the parameters</param>
+    public static void ApplyParameters(this DbCommand @this, IEnumerable<object> argsList = null)
+    {
+        if (argsList == null)
+        {
+            return;
+        }
 
+        var argsListArray = argsList as object[] ?? argsList.ToArray();
+        var td = TypeHandler.Get(argsListArray.First());
+
+        var i = 0;
+        foreach (var args in argsListArray)
+        {
             foreach (var property in td.Arguments)
             {
                 var value = td.GetValue(property.Property.Name, args);
-                cmd.ApplyParameter(property.Property.Name, value ?? DBNull.Value);
+                @this.ApplyParameter(property.Property.Name + i, value ?? DBNull.Value, property.IsStringEnum);
             }
-        }
 
-        /// <summary>
-        /// Add parameters to an indexed bulk command
-        /// </summary>
-        /// <param name="cmd">Command to add parameters to</param>
-        /// <param name="argsList">List of objects that holds the parameters</param>
-        public static void ApplyParameters(this DbCommand cmd, IEnumerable<object> argsList = null)
-        {
-            if (argsList == null) return;
-
-            var td = TypeHandler.Get(argsList.First());
-
-            int i = 0;
-            foreach (var args in argsList)
-            {
-                foreach (var property in td.Arguments)
-                {
-                    var value = td.GetValue(property.Property.Name, args);
-                    cmd.ApplyParameter(property.Property.Name + i, value ?? DBNull.Value);
-                }
-                i++;
-            }
+            i++;
         }
     }
 }

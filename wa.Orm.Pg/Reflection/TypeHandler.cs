@@ -1,32 +1,31 @@
 ﻿using System;
 using System.Collections.Concurrent;
 
-namespace wa.Orm.Pg.Reflection
+namespace wa.Orm.Pg.Reflection;
+
+public static class TypeHandler
 {
-    public static class TypeHandler
+    private static readonly ConcurrentDictionary<Type, TypeDescriber> Types = new();
+
+    public static TypeDescriber Get<T>()
     {
-        private static readonly ConcurrentDictionary<Type, TypeDescriber> types = new ConcurrentDictionary<Type, TypeDescriber>();
-
-        public static TypeDescriber Get<T>()
+        if (!Types.TryGetValue(typeof(T), out TypeDescriber result))
         {
-            if (!types.TryGetValue(typeof(T), out TypeDescriber result))
-            {
-                types.TryAdd(typeof(T), result = new TypeDescriber(typeof(T)));
-            }
-
-            return result;
+            Types.TryAdd(typeof(T), result = new TypeDescriber(typeof(T)));
         }
 
-        public static TypeDescriber Get(object obj)
+        return result;
+    }
+
+    public static TypeDescriber Get(object obj)
+    {
+        var type = obj.GetType();
+
+        if (!Types.TryGetValue(type, out var result))
         {
-            Type type = obj.GetType();
-
-            if (!types.TryGetValue(type, out TypeDescriber result))
-            {
-                types.TryAdd(type, result = new TypeDescriber(type));
-            }
-
-            return result;
+            Types.TryAdd(type, result = new TypeDescriber(type));
         }
+
+        return result;
     }
 }
